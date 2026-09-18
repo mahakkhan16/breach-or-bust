@@ -2,43 +2,822 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Breach or Bust — Cloud Security Audit</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
   :root {
     --bg: #0B1220;
     --panel: #131B2C;
+    --panel-hover: #16203A;
     --hairline: #243049;
     --text: #E8EDF5;
     --text-dim: #93A1B8;
     --danger: #FF5D4E;
+    --danger-dim: rgba(255,93,78,0.12);
     --safe: #2FD9B0;
+    --safe-dim: rgba(47,217,176,0.12);
     --warn: #F0AE3C;
+    --warn-dim: rgba(240,174,60,0.12);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
+
+  html, body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Space Grotesk', sans-serif;
-    padding: 40px;
+    min-height: 100vh;
   }
-  h1 {
-    font-size: 32px;
+
+  body {
+    padding: 28px 24px 60px;
+  }
+
+  .console {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- Header / Brief ---------- */
+  .brief {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .brief-left h1 {
+    font-size: 26px;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
+
+  .brief-left p {
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    margin-top: 4px;
+    letter-spacing: 0.2px;
+  }
+
+  .brief-right {
+    display: flex;
+    gap: 26px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 64px;
+  }
+
+  .stat-label {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .stat-value {
+    font-size: 19px;
+    color: var(--text);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .stat-value.timer { color: var(--warn); }
+  .stat-value.timer.low { color: var(--danger); }
+
+  /* ---------- Landing screen ---------- */
+  .landing {
+    padding: 30px 0 10px;
+  }
+
+  .landing .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--safe);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .landing h2 {
+    font-size: 30px;
+    max-width: 620px;
+    line-height: 1.3;
+    margin-bottom: 14px;
+  }
+
+  .landing .sub {
+    color: var(--text-dim);
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 34px;
+    font-size: 15px;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    max-width: 720px;
+    margin-bottom: 30px;
+  }
+
+  .tier-card {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    padding: 20px 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .tier-card:hover {
+    border-color: var(--safe);
+    background: var(--panel-hover);
+  }
+
+  .tier-card.selected {
+    border-color: var(--safe);
+    box-shadow: inset 0 0 0 1px var(--safe);
+  }
+
+  .tier-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--safe);
     letter-spacing: 1px;
     margin-bottom: 8px;
   }
-  p {
+
+  .tier-title { font-size: 17px; margin-bottom: 6px; font-weight: 500; }
+
+  .tier-desc {
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .start-btn {
+    background: var(--safe);
+    color: #06231B;
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 13px 28px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+
+  .start-btn:hover { filter: brightness(1.08); }
+  .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---------- Game grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    padding: 16px 16px 14px;
+    position: relative;
+    transition: border-color 0.15s ease;
+  }
+
+  .card.flagged {
+    border-color: var(--danger);
+  }
+
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .card-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    border: 1px solid var(--hairline);
+    padding: 3px 7px;
+    display: inline-block;
+  }
+
+  .card-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+  }
+
+  .card-name {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+
+  .card-config {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--hairline);
+    padding: 10px 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.65;
+    margin-bottom: 12px;
+    max-height: 130px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .card-config .k { color: #6E88B8; }
+  .card-config .v { color: var(--text); }
+
+  .flag-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--hairline);
     color: var(--text-dim);
     font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.6px;
+    padding: 9px 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .flag-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .flag-btn.active {
+    background: var(--danger-dim);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* ---------- Footer bar (submit) ---------- */
+  .footer-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--hairline);
+    padding-top: 20px;
+  }
+
+  .flag-count {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .flag-count span { color: var(--danger); font-weight: 700; }
+
+  /* ---------- Results screen ---------- */
+  .results-head {
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .results-verdict {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .results-verdict.pass { color: var(--safe); }
+  .results-verdict.fail { color: var(--danger); }
+
+  .results-score {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .results-sub {
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .breakdown {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 24px 0 30px;
+  }
+
+  .bd-box {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    padding: 14px 14px;
+  }
+
+  .bd-num { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .bd-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.6px;
+  }
+
+  .bd-box.tp .bd-num { color: var(--safe); }
+  .bd-box.fp .bd-num { color: var(--warn); }
+  .bd-box.fn .bd-num { color: var(--danger); }
+  .bd-box.tn .bd-num { color: var(--text-dim); }
+
+  .reveal-title {
+    font-size: 16px;
+    margin-bottom: 14px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .reveal-card {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--hairline);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .reveal-card.correct { border-left-color: var(--safe); }
+  .reveal-card.wrong { border-left-color: var(--danger); }
+
+  .reveal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .reveal-name { font-weight: 500; font-size: 14px; }
+
+  .reveal-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+  }
+
+  .reveal-tag.vuln { background: var(--danger-dim); color: var(--danger); }
+  .reveal-tag.secure { background: var(--safe-dim); color: var(--safe); }
+
+  .reveal-verdict {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+  }
+
+  .reveal-explain {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .replay-btn {
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--safe);
+    color: var(--safe);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
     font-size: 14px;
+    padding: 12px 26px;
+    cursor: pointer;
+  }
+
+  .replay-btn:hover { background: var(--safe-dim); }
+
+  @media (max-width: 700px) {
+    .tier-grid { grid-template-columns: 1fr; }
+    .breakdown { grid-template-columns: repeat(2, 1fr); }
+    .brief-right { gap: 16px; }
   }
 </style>
 </head>
 <body>
 
-  <h1>BREACH OR BUST</h1>
-  <p>Cloud Security Audit Console — structure test</p>
+<div class="console">
+
+  <header class="brief">
+    <div class="brief-left">
+      <h1>BREACH OR BUST</h1>
+      <p>Cloud Security Audit Console — AWS Resource Review</p>
+    </div>
+    <div class="brief-right" id="statBar" style="display:none;">
+      <div class="stat">
+        <span class="stat-label">TIME</span>
+        <span class="stat-value timer" id="timerDisplay">--:--</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">TIER</span>
+        <span class="stat-value" id="tierDisplay">-</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">FLAGGED</span>
+        <span class="stat-value" id="flaggedDisplay">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- LANDING SCREEN -->
+  <section class="screen active" id="landing">
+    <div class="landing">
+      <div class="tag">// MISSION BRIEF</div>
+      <h2>16 AWS resources are queued for review. Some are misconfigured. Some only look that way.</h2>
+      <p class="sub">You're auditing real, well-documented AWS misconfiguration patterns — public buckets, wildcard IAM policies, open security groups, unencrypted volumes, stale keys. Flag what's genuinely exploitable. Leave the rest alone. Context matters more than pattern-matching — one resource in every run is designed to look dangerous but isn't.</p>
+
+      <div class="tier-grid" id="tierGrid">
+        <button class="tier-card" data-tier="analyst" data-count="6" data-time="120">
+          <div class="tier-name">TIER 01</div>
+          <div class="tier-title">Analyst</div>
+          <div class="tier-desc">6 resources · 2:00 on the clock</div>
+        </button>
+        <button class="tier-card" data-tier="engineer" data-count="10" data-time="150">
+          <div class="tier-name">TIER 02</div>
+          <div class="tier-title">Engineer</div>
+          <div class="tier-desc">10 resources · 2:30 on the clock</div>
+        </button>
+        <button class="tier-card" data-tier="lead" data-count="16" data-time="180">
+          <div class="tier-name">TIER 03</div>
+          <div class="tier-title">Security Lead</div>
+          <div class="tier-desc">16 resources · 3:00 on the clock</div>
+        </button>
+      </div>
+
+      <button class="start-btn" id="startBtn" disabled>SELECT A TIER TO BEGIN</button>
+    </div>
+  </section>
+
+  <!-- GAME SCREEN -->
+  <section class="screen" id="game">
+    <div class="grid" id="resourceGrid"></div>
+    <div class="footer-bar">
+      <div class="flag-count"><span id="flagCountNum">0</span> resources flagged</div>
+      <button class="start-btn" id="submitBtn">SUBMIT AUDIT</button>
+    </div>
+  </section>
+
+  <!-- RESULTS SCREEN -->
+  <section class="screen" id="results">
+    <div class="results-head">
+      <div class="results-verdict" id="verdictLabel">// AUDIT COMPLETE</div>
+      <div class="results-score" id="scoreDisplay">0</div>
+      <div class="results-sub" id="scoreSub"></div>
+    </div>
+
+    <div class="breakdown">
+      <div class="bd-box tp"><div class="bd-num" id="bdTP">0</div><div class="bd-label">CORRECTLY FLAGGED</div></div>
+      <div class="bd-box fp"><div class="bd-num" id="bdFP">0</div><div class="bd-label">FALSE ALARMS</div></div>
+      <div class="bd-box fn"><div class="bd-num" id="bdFN">0</div><div class="bd-label">MISSED VULNS</div></div>
+      <div class="bd-box tn"><div class="bd-num" id="bdTN">0</div><div class="bd-label">CORRECTLY CLEARED</div></div>
+    </div>
+
+    <div class="reveal-title">// FULL RESOURCE BREAKDOWN</div>
+    <div id="revealList"></div>
+
+    <button class="replay-btn" id="replayBtn">RUN ANOTHER AUDIT</button>
+  </section>
+
+</div>
+
+<script>
+/* ============ RESOURCE POOL ============ */
+/* Each resource: type badge, name, config text (with k/v spans), isVuln, explanation */
+const POOL = [
+  {
+    type: "S3 BUCKET", id: "s3-01", name: "customer-invoices-prod",
+    config: [["BucketPolicy.Principal","\"*\""],["BucketPolicy.Action","\"s3:GetObject\""],["BlockPublicAccess","false"],["Encryption","AES-256"]],
+    isVuln: true,
+    explain: "Principal \"*\" combined with BlockPublicAccess disabled means anyone on the internet can read every object in this bucket — and it holds customer invoices. This is the textbook public-bucket misconfiguration behind several real-world breaches."
+  },
+  {
+    type: "S3 BUCKET", id: "s3-02", name: "marketing-site-assets",
+    config: [["BucketPolicy.Principal","\"*\""],["BucketPolicy.Action","\"s3:GetObject\""],["StaticWebsiteHosting","enabled"],["BlockPublicAccess","false"]],
+    isVuln: false,
+    explain: "This looks identical to a public-bucket vuln at a glance, but StaticWebsiteHosting is enabled — this bucket is a public website by design. Public read access to a static site's assets is expected and not a vulnerability. This is the trick case: context beats pattern-matching."
+  },
+  {
+    type: "S3 BUCKET", id: "s3-03", name: "internal-audit-logs",
+    config: [["BucketPolicy.Principal","arn:aws:iam::role/audit-svc"],["BlockPublicAccess","true"],["Encryption","aws:kms"],["Versioning","enabled"]],
+    isVuln: false,
+    explain: "Access is scoped to a specific IAM role, public access is blocked, and encryption plus versioning are on. This bucket is configured correctly."
+  },
+  {
+    type: "IAM POLICY", id: "iam-01", name: "lambda-deploy-role",
+    config: [["Effect","Allow"],["Action","\"*\""],["Resource","\"*\""],["AttachedTo","lambda-deploy-role"]],
+    isVuln: true,
+    explain: "Action: \"*\" on Resource: \"*\" grants unrestricted access to every AWS service and resource in the account. A compromised Lambda using this role could do anything — create users, delete data, exfiltrate secrets. Wildcard IAM policies are one of the most common privilege-escalation paths in AWS breaches."
+  },
+  {
+    type: "IAM POLICY", id: "iam-02", name: "readonly-analytics-role",
+    config: [["Effect","Allow"],["Action","[\"s3:GetObject\",\"athena:StartQueryExecution\"]"],["Resource","arn:aws:s3:::analytics-data/*"]],
+    isVuln: false,
+    explain: "Permissions are scoped to specific read-only actions on a specific bucket. This follows least-privilege practice."
+  },
+  {
+    type: "IAM POLICY", id: "iam-03", name: "ci-pipeline-user",
+    config: [["Effect","Allow"],["Action","\"ec2:*\""],["Resource","\"*\""],["MFA","not required"]],
+    isVuln: true,
+    explain: "Full EC2 permissions across all resources, on a CI user with no MFA requirement, means a leaked CI credential (a very common leak vector) grants an attacker the ability to spin up or terminate any EC2 instance in the account."
+  },
+  {
+    type: "SECURITY GROUP", id: "sg-01", name: "web-tier-sg",
+    config: [["Inbound","22/tcp from 0.0.0.0/0"],["Inbound","443/tcp from 0.0.0.0/0"],["Outbound","all traffic allowed"]],
+    isVuln: true,
+    explain: "Port 22 (SSH) open to 0.0.0.0/0 exposes SSH to the entire internet. This is one of the most-scanned, most-exploited misconfigurations in cloud environments — automated bots probe for exactly this within minutes of an instance going live."
+  },
+  {
+    type: "SECURITY GROUP", id: "sg-02", name: "public-lb-sg",
+    config: [["Inbound","443/tcp from 0.0.0.0/0"],["Inbound","80/tcp from 0.0.0.0/0"],["Outbound","all traffic allowed"]],
+    isVuln: false,
+    explain: "Ports 80/443 open to the world is normal and expected for a public-facing load balancer — that's its job. No SSH or admin ports are exposed."
+  },
+  {
+    type: "SECURITY GROUP", id: "sg-03", name: "db-tier-sg",
+    config: [["Inbound","5432/tcp from 0.0.0.0/0"],["Outbound","all traffic allowed"]],
+    isVuln: true,
+    explain: "PostgreSQL's port (5432) open to the entire internet means the database is directly reachable by anyone. Database ports should only ever be reachable from application-tier security groups, never from 0.0.0.0/0."
+  },
+  {
+    type: "SECURITY GROUP", id: "sg-04", name: "bastion-sg",
+    config: [["Inbound","22/tcp from 203.0.113.0/24"],["Outbound","all traffic allowed"]],
+    isVuln: false,
+    explain: "SSH is restricted to a specific known IP range (a corporate VPN/office block), not the open internet. This is the correct way to expose SSH."
+  },
+  {
+    type: "RDS INSTANCE", id: "rds-01", name: "prod-orders-db",
+    config: [["PubliclyAccessible","true"],["StorageEncrypted","false"],["Engine","postgres"]],
+    isVuln: true,
+    explain: "Publicly accessible with encryption disabled is a double failure: the database can be reached from the internet AND its data at rest is unprotected. Either alone is a finding; together it's severe."
+  },
+  {
+    type: "RDS INSTANCE", id: "rds-02", name: "staging-cache-db",
+    config: [["PubliclyAccessible","false"],["StorageEncrypted","true"],["Engine","mysql"]],
+    isVuln: false,
+    explain: "Not publicly accessible and encrypted at rest. This is configured correctly, even though it's only a staging database."
+  },
+  {
+    type: "EC2 INSTANCE", id: "ec2-01", name: "legacy-batch-worker",
+    config: [["IAMRole","admin-full-access"],["PublicIP","attached"],["IMDSv2","not enforced"]],
+    isVuln: true,
+    explain: "An admin-privileged role, a public IP, and IMDSv2 not enforced together mean this instance is exposed to the classic SSRF-to-credential-theft chain: an attacker who reaches the instance metadata service via IMDSv1 can steal admin credentials directly."
+  },
+  {
+    type: "EBS VOLUME", id: "ebs-01", name: "prod-app-root-volume",
+    config: [["Encrypted","false"],["Attached","true"],["SnapshotPublic","false"]],
+    isVuln: true,
+    explain: "An unencrypted volume attached to a production instance means any snapshot or disk-level access exposes data in plaintext. Encryption at rest should be default for anything holding production data."
+  },
+  {
+    type: "EBS VOLUME", id: "ebs-02", name: "old-snapshot-2021",
+    config: [["Encrypted","true"],["Attached","false"],["SnapshotPublic","true"]],
+    isVuln: true,
+    explain: "SnapshotPublic: true means this snapshot can be found and copied by any AWS account in the world, regardless of the volume's own encryption setting — encryption keys tied to your account may not even transfer, but the exposure itself is the finding. Public snapshots are a frequently-overlooked leak vector."
+  },
+  {
+    type: "IAM USER", id: "iam-04", name: "svc-account-jenkins",
+    config: [["AccessKeyAge","412 days"],["MFA","not enabled"],["LastRotated","never"]],
+    isVuln: true,
+    explain: "An access key over a year old that has never been rotated, with no MFA, is a stale-credential risk — the longer a key lives, the larger the window in which a past leak (in logs, repos, build artifacts) remains exploitable."
+  }
+];
+
+/* ============ STATE ============ */
+let currentSet = [];
+let flagged = new Set();
+let timeLeft = 0;
+let timerInterval = null;
+let selectedTier = null;
+
+const tierConfig = {
+  analyst:  { count: 6,  time: 120, label: "ANALYST" },
+  engineer: { count: 10, time: 150, label: "ENGINEER" },
+  lead:     { count: 16, time: 180, label: "SECURITY LEAD" }
+};
+
+/* ============ HELPERS ============ */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return m + ':' + sec;
+}
+
+/* ============ TIER SELECTION ============ */
+document.querySelectorAll('.tier-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedTier = card.dataset.tier;
+    const btn = document.getElementById('startBtn');
+    btn.disabled = false;
+    btn.textContent = 'BEGIN AUDIT — ' + tierConfig[selectedTier].label.toUpperCase();
+  });
+});
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('submitBtn').addEventListener('click', submitAudit);
+document.getElementById('replayBtn').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  document.getElementById('statBar').style.display = 'none';
+  showScreen('landing');
+});
+
+/* ============ GAME START ============ */
+function startGame() {
+  const cfg = tierConfig[selectedTier];
+  currentSet = shuffle(POOL).slice(0, cfg.count);
+  flagged = new Set();
+  timeLeft = cfg.time;
+
+  document.getElementById('tierDisplay').textContent = cfg.label;
+  document.getElementById('flaggedDisplay').textContent = '0';
+  document.getElementById('statBar').style.display = 'flex';
+  document.getElementById('flagCountNum').textContent = '0';
+
+  renderGrid();
+  showScreen('game');
+
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      submitAudit();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  el.textContent = formatTime(Math.max(timeLeft, 0));
+  el.classList.toggle('low', timeLeft <= 20);
+}
+
+/* ============ RENDER RESOURCE GRID ============ */
+function renderGrid() {
+  const grid = document.getElementById('resourceGrid');
+  grid.innerHTML = '';
+  currentSet.forEach(res => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.id = res.id;
+
+    const configHtml = res.config.map(([k, v]) =>
+      `<span class="k">${k}:</span> <span class="v">${v}</span>`
+    ).join('\n');
+
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="card-type">${res.type}</span>
+        <span class="card-id">${res.id.toUpperCase()}</span>
+      </div>
+      <div class="card-name">${res.name}</div>
+      <div class="card-config">${configHtml}</div>
+      <button class="flag-btn" data-id="${res.id}">FLAG AS VULNERABLE</button>
+    `;
+
+    grid.appendChild(card);
+  });
+
+  grid.querySelectorAll('.flag-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleFlag(btn));
+  });
+}
+
+function toggleFlag(btn) {
+  const id = btn.dataset.id;
+  const card = btn.closest('.card');
+  if (flagged.has(id)) {
+    flagged.delete(id);
+    btn.classList.remove('active');
+    card.classList.remove('flagged');
+    btn.textContent = 'FLAG AS VULNERABLE';
+  } else {
+    flagged.add(id);
+    btn.classList.add('active');
+    card.classList.add('flagged');
+    btn.textContent = 'FLAGGED — CLICK TO UNFLAG';
+  }
+  document.getElementById('flagCountNum').textContent = flagged.size;
+  document.getElementById('flaggedDisplay').textContent = flagged.size;
+}
+
+/* ============ SCORING + SUBMIT ============ */
+function submitAudit() {
+  clearInterval(timerInterval);
+
+  let tp = 0, fp = 0, fn = 0, tn = 0;
+
+  currentSet.forEach(res => {
+    const wasFlagged = flagged.has(res.id);
+    if (res.isVuln && wasFlagged) tp++;
+    else if (!res.isVuln && wasFlagged) fp++;
+    else if (res.isVuln && !wasFlagged) fn++;
+    else tn++;
+  });
+
+  const total = currentSet.length;
+  const rawScore = (tp * 10) - (fp * 6) - (fn * 8) + (tn * 2);
+  const score = Math.max(rawScore, 0);
+  const maxPossible = total * 12; // tp*10 + tn*2 ceiling roughly
+  const accuracy = Math.round(((tp + tn) / total) * 100);
+
+  document.getElementById('scoreDisplay').textContent = score;
+  document.getElementById('scoreSub').textContent =
+    `${accuracy}% accuracy · ${total} resources reviewed · ${formatTime(Math.max(timeLeft,0))} remaining`;
+
+  const verdict = document.getElementById('verdictLabel');
+  if (accuracy >= 80) {
+    verdict.textContent = '// AUDIT PASSED';
+    verdict.className = 'results-verdict pass';
+  } else {
+    verdict.textContent = '// AUDIT FAILED — GAPS FOUND';
+    verdict.className = 'results-verdict fail';
+  }
+
+  document.getElementById('bdTP').textContent = tp;
+  document.getElementById('bdFP').textContent = fp;
+  document.getElementById('bdFN').textContent = fn;
+  document.getElementById('bdTN').textContent = tn;
+
+  renderReveal();
+  document.getElementById('statBar').style.display = 'none';
+  showScreen('results');
+}
+
+function renderReveal() {
+  const list = document.getElementById('revealList');
+  list.innerHTML = '';
+
+  currentSet.forEach(res => {
+    const wasFlagged = flagged.has(res.id);
+    const correct = (res.isVuln && wasFlagged) || (!res.isVuln && !wasFlagged);
+
+    const div = document.createElement('div');
+    div.className = 'reveal-card ' + (correct ? 'correct' : 'wrong');
+
+    const actualTag = res.isVuln
+      ? '<span class="reveal-tag vuln">VULNERABLE</span>'
+      : '<span class="reveal-tag secure">SECURE</span>';
+
+    const verdictText = correct
+      ? (res.isVuln ? 'You flagged it — correct.' : 'You left it clear — correct.')
+      : (res.isVuln ? 'You missed this one.' : 'False alarm — this was actually fine.');
+
+    div.innerHTML = `
+      <div class="reveal-top">
+        <span class="reveal-name">${res.name} <span style="color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:11px;">(${res.type})</span></span>
+        ${actualTag}
+      </div>
+      <div class="reveal-verdict">${verdictText}</div>
+      <div class="reveal-explain" style="margin-top:6px;">${res.explain}</div>
+    `;
+    list.appendChild(div);
+  });
+}
+</script>
 
 </body>
 </html>
